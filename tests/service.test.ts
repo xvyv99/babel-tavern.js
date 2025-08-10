@@ -2,7 +2,7 @@ import { expect, test } from 'vitest';
 
 import { GoogleGenAIService, OpenAIService } from '../src/service.js';
 
-test.skip('GoogleGenAIAPI generate method', async () => {
+test.skip('GoogleGenAIService generate method', async () => {
     const apiKey = process.env.GOOGLE_API_KEY!;
     expect(apiKey).toBeDefined();
 
@@ -19,7 +19,7 @@ test.skip('GoogleGenAIAPI generate method', async () => {
 }, 20000);
 // TODO: Because I don't have a vaild Google API key, this test is skipped.
 
-test.runIf(process.env.TEST_SERVICE)('OpenAIModel generate method', async () => {
+test.runIf(process.env.TEST_SERVICE)('OpenAIService generate method', async () => {
     const apiKey = process.env.OPENAI_API_KEY!;
     expect(apiKey).toBeDefined();
 
