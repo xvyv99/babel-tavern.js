@@ -6,7 +6,8 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "test": "vitest"
   },
   "keywords": [],
   "author": "xvyv99",
@@ -14,6 +15,12 @@
   "type": "module",
   "devDependencies": {
     "@types/node": "^24.2.1",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "@google/genai": "^1.13.0",
+    "character-card-utils": "^2.0.3",
+    "openai": "^5.12.2"
   }
 }
