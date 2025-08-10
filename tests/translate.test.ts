@@ -1,8 +1,6 @@
 import { expect, test } from 'vitest';
 
-import { OpenAIService } from '../src/service.js';
-import { CharacterCardV1 } from '../src/schema.js';
-import { Translator, TranslateSource } from '../src/translate.js';
+import { OpenAIService, CharacterCardV1, Translator, TranslateSource } from '../src/index.js';
 
 const isAnyChinese = (text: string): boolean => {
     return /[\u4e00-\u9fff]/.test(text);
