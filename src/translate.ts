@@ -1,4 +1,7 @@
-import type { Translateable } from './schema.js';
+import { v1, v2 } from 'character-card-utils';
+
+import { type Translateable, TopLevelSchema, CharacterCardV1, CharacterCardV2 } from './schema.js';
+import { getSchemaType } from './schema.js';
 import type { BaseService } from './service.js';
 
 export class TranslateSource {
@@ -12,9 +15,42 @@ export class TranslateSource {
         this.targetLang = targetLang;
     }
 
-    static async fromJSON(): Promise<TranslateSource> {
-        // Implementation for creating TranslateSource from JSON
-        throw new Error('Method not implemented.');
+    static async fromJSON(
+        jsonObj: Object,
+        sourceLang: string,
+        targetLang: string, 
+    ): Promise<TranslateSource> {
+        const cardType = getSchemaType(jsonObj);
+        switch (cardType) {
+            case TopLevelSchema.CharacterCardV1:
+                const v1ParsingAttempt = v1.safeParse(jsonObj);
+
+                if (!v1ParsingAttempt.success) {
+                    throw new Error(`Failed to parse CharacterCardV1: ${v1ParsingAttempt.error}`);
+                }
+
+                return new TranslateSource(
+                    new CharacterCardV1(v1ParsingAttempt.data), 
+                    sourceLang, 
+                    targetLang
+                );
+
+            case TopLevelSchema.CharacterCardV2:
+                const v2ParsingAttempt = v2.safeParse(jsonObj);
+
+                if (!v2ParsingAttempt.success) {
+                    throw new Error(`Failed to parse CharacterCardV1: ${v2ParsingAttempt.error}`);
+                }
+
+                return new TranslateSource(
+                    new CharacterCardV2(v2ParsingAttempt.data), 
+                    sourceLang, 
+                    targetLang
+                );
+
+            default:
+                throw new Error(`Unsupported schema type: ${cardType}`);
+        }
     }
 
     static async fromPNG(): Promise<TranslateSource> {
@@ -23,7 +59,7 @@ export class TranslateSource {
     }
 }
 
-const buildTranslationRequest = (
+const createTranslationPrompt = (
         source_lang: string, 
         target_lang: string, 
         source_text: string
@@ -52,14 +88,14 @@ export class Translator {
 
     async run(source: TranslateSource) {
         await source.card.walkSetAttr( async (text: string) => {
-            const prompt = buildTranslationRequest(
+            const prompt = createTranslationPrompt(
                 source.sourceLang, 
                 source.targetLang, 
                 text
             );
 
             const response = await this.model.generate(prompt);
-            console.log(`Translated text: ${response}`);
+            console.info(`Translated text: ${response}`);
             return response;
         });
     }

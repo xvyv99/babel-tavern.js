@@ -21,7 +21,7 @@ export class GoogleGenAIService implements BaseService {
         });
 
         if (response.text == undefined) {
-            throw new Error('No text returned from model');
+            throw new Error(`No text returned from model with prompt ${prompt}`);
         } 
 
         return response.text;
@@ -48,7 +48,7 @@ export class OpenAIService implements BaseService {
 
         const text = completion.choices[0]?.message.content;
         if (!text) {
-            throw new Error('No text returned from model');
+            throw new Error(`No text returned from model with prompt ${prompt}`);
         }
 
         return text;

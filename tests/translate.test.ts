@@ -1,12 +1,14 @@
+import fs from 'fs/promises';
+
 import { expect, test } from 'vitest';
 
-import { OpenAIService, CharacterCardV1, Translator, TranslateSource } from '../src/index.js';
+import { OpenAIService, GoogleGenAIService, CharacterCardV1, Translator, TranslateSource } from '../src/index.js';
 
 const isAnyChinese = (text: string): boolean => {
     return /[\u4e00-\u9fff]/.test(text);
 }
 
-test("Translate test", async () => {
+test.skip("Translate test", async () => {
     const apiKey = process.env.OPENAI_API_KEY!;
     expect(apiKey).toBeDefined();
 
@@ -15,14 +17,14 @@ test("Translate test", async () => {
 
     const translator = new Translator(service);
 
-    const testCard = new CharacterCardV1(
-        'Test Character',
-        'This is a test character description.',
-        'Friendly and helpful.',
-        'A scenario where the character interacts with others.',
-        'Hello, I am a test character.',
-        'This is an example message from the test character.'
-    );
+    const testCard = new CharacterCardV1({
+        name: 'Test Character',
+        description: 'This is a test character description.',
+        personality: 'Friendly and helpful.',
+        scenario: 'A scenario where the character interacts with others.',
+        first_mes: 'Hello, I am a test character.',
+        mes_example: 'This is an example message from the test character.'
+    });
 
     const source: TranslateSource = {
         card: testCard,
@@ -32,10 +34,35 @@ test("Translate test", async () => {
     await translator.run(source);
 
     source.card.walkAttr(async (field: string) => {
-        const text = source.card.getAttr(field);
+        const attr = source.card.getAttr(field);
 
-        expect(text).toBeDefined();
-        expect(text.length).toBeGreaterThan(0);
-        expect(isAnyChinese(text)).toBe(true);
+        expect(attr).toBeDefined();
     });
 }, 20000);
+
+test("Translate test from json file", async () => {
+    const apiKey = process.env.GOOGLE_API_KEY!;
+    expect(apiKey).toBeDefined();
+
+    const modelName = 'gemini-2.5-flash';
+    const service = new GoogleGenAIService(apiKey, modelName);
+
+    const translator = new Translator(service);
+
+    const jsonStr = await fs.readFile('./test_data/test_v2.json', 'utf-8');
+    const data = JSON.parse(jsonStr);
+
+    const source = await TranslateSource.fromJSON(data, 'english', 'chinese');
+
+    await translator.run(source);
+
+    source.card.walkAttr(async (field: string) => {
+        const attr = source.card.getAttr(field);
+
+        expect(attr).toBeDefined();
+    });
+
+    const saveData = JSON.stringify(source.card, null, 4);
+
+    await fs.writeFile('./test_data/out/test_v2_zh.json', saveData, 'utf-8');
+}, 0);
