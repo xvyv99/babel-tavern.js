@@ -22,8 +22,10 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
+    "character-card-utils": "^2.0.3"
+  },
+  "optionalDependencies": {
     "@google/genai": "^1.13.0",
-    "character-card-utils": "^2.0.3",
     "openai": "^5.12.2"
   }
 }

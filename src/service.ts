@@ -1,17 +1,45 @@
-import { GoogleGenAI } from '@google/genai';
-import OpenAI from 'openai';
+import type { GoogleGenAI } from '@google/genai';
+import type OpenAI from 'openai';
 
-export interface BaseService {
-    generate(prompt: string): Promise<string>;
+async function getGoogleGenAI() {
+  try {
+    const mod = await import('@google/genai');
+    return mod.GoogleGenAI;
+  } catch (e) {
+    throw new Error('Please install @google/genai dependency before using Google GenAI (npm install @google/genai)');
+  }
+}
+
+async function getOpenAI() {
+  try {
+    const mod = await import('openai');
+    return mod.default;
+  } catch (e) {
+    throw new Error('Please install openai dependency before using OpenAI (npm install openai)');
+  }
+}
+
+export abstract class BaseService {
+    static create(apiKey: string, modelName: string): Promise<BaseService> {
+        throw new Error('Not implemented yet!');
+    }
+
+    abstract generate(prompt: string): Promise<string>;
 }
 
 export class GoogleGenAIService implements BaseService {
     readonly modelName: string;
     readonly client: GoogleGenAI;
 
-    constructor(apiKey: string, modelName: string) {
-        this.client = new GoogleGenAI({apiKey: apiKey});
+    private constructor(client: GoogleGenAI, modelName: string) {
+        this.client = client;
         this.modelName = modelName;
+    }
+
+    static async create(apiKey: string, modelName: string): Promise<GoogleGenAIService> {
+        const GoogleGenAI = await getGoogleGenAI();
+        const client = new GoogleGenAI({ apiKey: apiKey });
+        return new GoogleGenAIService(client, modelName);
     }
 
     async generate(prompt: string): Promise<string> {
@@ -32,9 +60,15 @@ export class OpenAIService implements BaseService {
     readonly modelName: string;
     readonly client: OpenAI;
 
-    constructor(apiKey: string, modelName: string, baseURL?: string) {
-        this.client = new OpenAI({ baseURL: baseURL, apiKey: apiKey });
+    private constructor(client: OpenAI, modelName: string) {
+        this.client = client;
         this.modelName = modelName;
+    }
+
+    static async create(apiKey: string, modelName: string, baseURL?: string): Promise<OpenAIService> {
+        const OpenAI = await getOpenAI();
+        const client = new OpenAI({ baseURL: baseURL, apiKey: apiKey });
+        return new OpenAIService(client, modelName);
     }
 
     async generate(prompt: string): Promise<string> {
@@ -56,4 +90,4 @@ export class OpenAIService implements BaseService {
 }
     
 
-// TODO: Implement other model classes as needed
+// TODO: Implement other model service classes as needed

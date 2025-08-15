@@ -7,7 +7,7 @@ test.runIf(process.env.TEST_SERVICE)('GoogleGenAIService generate method', async
     expect(apiKey).toBeDefined();
 
     const modelName = 'gemini-2.5-flash';
-    const service = new GoogleGenAIService(apiKey, modelName);
+    const service = await GoogleGenAIService.create(apiKey, modelName);
 
     const prompt = 'Hello, how are you?';
 
@@ -23,7 +23,7 @@ test.runIf(process.env.TEST_SERVICE)('OpenAIService generate method', async () =
     expect(apiKey).toBeDefined();
 
     const modelName = 'openai/gpt-oss-20b:free';
-    const service = new OpenAIService(apiKey, modelName, process.env.OPENAI_BASE_URL);
+    const service = await OpenAIService.create(apiKey, modelName, process.env.OPENAI_BASE_URL);
 
     const prompt = 'Hello, how are you?';
     const response = await service.generate(prompt);
