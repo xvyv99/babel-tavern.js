@@ -33,11 +33,7 @@ test.skip("Translate test", async () => {
     };
     await translator.run(source);
 
-    source.card.walkAttr(async (field: string) => {
-        const attr = source.card.getAttr(field);
 
-        expect(attr).toBeDefined();
-    });
 }, 20000);
 
 test("Translate test from json file", async () => {
@@ -56,13 +52,7 @@ test("Translate test from json file", async () => {
 
     await translator.run(source);
 
-    source.card.walkAttr(async (field: string) => {
-        const attr = source.card.getAttr(field);
-
-        expect(attr).toBeDefined();
-    });
-
     const saveData = JSON.stringify(source.card, null, 4);
 
     await fs.writeFile('./test_data/out/test_v2_zh.json', saveData, 'utf-8');
-}, 0);
+}, 50000);

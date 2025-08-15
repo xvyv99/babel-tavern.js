@@ -1,70 +1,82 @@
 import type { V1, V2, CharacterBook, CharacterBookEntry} from 'character-card-utils';
 
 type walkCallback = (text: string) => Promise<string>;
+type AttrType = string | Array<string> | Translateable | Translateable[];
 
 export class Translateable {
     static readonly NEED_TRANSLATE: Array<string> = [];
 
-    getAttr = (attr: string): string | Array<string> | Translateable | Translateable[] => {
-        let val = this[attr as keyof this];
+    getAttr = (attr: string): AttrType => {
+        const val = this[attr as keyof this];
 
         if (val === undefined) {
             throw new Error(`Property ${attr} is not defined on ${this.constructor.name}`);
-        } else if (typeof val === 'string') {
-
-        } else if (val instanceof Translateable) {
-
-        } else if (val instanceof Array) {
-            if (
-                !(val.every((i) => (i as any) instanceof Translateable) ||
-                val.every((i) => typeof i === 'string'))
-            ) {
-                throw new Error(`Array property "${attr}" on ${this.constructor.name} must contain only strings or Translateable instances.`);
-            }
-        } else {
-            throw new Error(`Property ${attr} is not a string or Translateable on ${this.constructor.name}`);
         }
 
-        return val as string | Array<string>;
+        const isString = typeof val === 'string';
+        const isTranslateable = val instanceof Translateable;
+        const isValidArray = val instanceof Array && (
+            val.every(i => typeof i === 'string') || 
+            val.every(i => i instanceof Translateable)
+        );
+
+        if (!isString && !isTranslateable && !isValidArray) {
+            throw new Error(`Property ${attr} on ${this.constructor.name} must be string, Translateable, or array of strings/Translateables`);
+        }
+
+        return val as AttrType;
     }
 
     walkAttr = async (callback: (field: string) => any) => {
         const arr = (this.constructor as typeof Translateable).NEED_TRANSLATE;
 
         await Promise.all(arr.map( async (item) => {
+            const val = this.getAttr(item);
+
+            if (val instanceof Translateable) {
+                await val.walkAttr(callback);
+            } else if (val instanceof Array && val.length > 0 && val.every(i => i instanceof Translateable)) {
+                await Promise.all(
+                    val.map(async (item) => {
+                        await item.walkAttr(callback);
+                    })
+                );
+            }
+
             await callback(item);
         }))
     }
 
     walkSetAttr = async (callback: walkCallback) => {
-        await this.walkAttr( async (item) => {
-            const transAttr = this.getAttr(item);
+        const arr = (this.constructor as typeof Translateable).NEED_TRANSLATE;
 
-            if (transAttr instanceof Translateable) {
-                await transAttr.walkSetAttr(callback);
-            } else if (typeof transAttr === 'string' && transAttr.trim().length > 0) {
-                const translatedText = await callback(transAttr);
+        await Promise.all(arr.map( async (item) => {
+            const val = this.getAttr(item);
+
+            if (val instanceof Translateable) {
+                await val.walkSetAttr(callback);
+            } else if (typeof val === 'string' && val.trim().length > 0) {
+                const translatedText = await callback(val);
                 (this as any)[item] = translatedText;
-
                 // FIXME: This is a workaround for TypeScript's type checking.
-            } else if (transAttr instanceof Array && transAttr.length > 0) {
-                if (transAttr.every((i) => (i as any) instanceof Translateable)) {
+            } else if (val instanceof Array && val.length > 0) {
+                if (val.every((i) => (i as any) instanceof Translateable)) {
                     await Promise.all(
-                        transAttr.map(async (item) => {
+                        val.map(async (item) => {
                             await (item as Translateable).walkSetAttr(callback);
                         })
                     );
-                } else if (transAttr.every((i) => typeof i === 'string')) {
+                } else if (val.every((i) => typeof i === 'string')) {
                     await Promise.all(
-                        transAttr.map(async (item, index) => {
+                        val.map(async (item, index) => {
                             if (item === undefined || item.trim().length === 0) return;
 
-                            transAttr[index] = await callback(item as string);
+                            val[index] = await callback(item as string);
                         })
                     );
                 }
             }
-        });
+        }));
     }
 }
 
